@@ -85,10 +85,25 @@ python experiments/plot_results.py
 
 If deployed in a real-world smart transportation system, we would monitor:
 
-- Average passenger waiting time
+-  Average passenger waiting time
 - Taxi utilization efficiency
 - Hotspot congestion levels
 - Frequency of taxi repositioning
 - Sudden increases in passenger demand
 
 This helps ensure efficient and reliable taxi dispatch performance.
+
+
+## Architecture diagram
+
+Passenger Request
+        ↓
+Taxi Simulator Environment
+        ↓
+Q-Learning Agent
+        ↓
+Policy Selection
+        ↓
+Evaluation + MLflow Tracking
+        ↓
+FastAPI Prediction Service
