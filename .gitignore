@@ -5,6 +5,8 @@ models/ppo/ppo_dispatch.zip
 .dvc/cache
 .dvc/cache/
 
+airflow.db
+
 # MLflow
 mlruns/
 mlflow.db
