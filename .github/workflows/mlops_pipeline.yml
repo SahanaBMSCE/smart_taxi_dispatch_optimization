@@ -1,0 +1,94 @@
+name: Smart Taxi Dispatch MLOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - feature/*
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+
+  build-and-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # -----------------------------------
+      # Checkout Repository
+      # -----------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------
+      # Setup Python
+      # -----------------------------------
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # -----------------------------------
+      # Install Dependencies
+      # -----------------------------------
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # -----------------------------------
+      # Verify Imports
+      # -----------------------------------
+
+      - name: Verify FastAPI import
+        run: |
+          python -c "from api.app import app"
+
+      # -----------------------------------
+      # Run PPO Training
+      # -----------------------------------
+
+      - name: Train PPO Model
+        run: |
+          python -m sim.ppo_agent
+
+      # -----------------------------------
+      # Run Q-Learning Training
+      # -----------------------------------
+
+      - name: Train Q-Learning Model
+        run: |
+          python -m experiments.train --config configs/qlearning_v2_explored.yaml
+
+      # -----------------------------------
+      # Generate Comparison Plot
+      # -----------------------------------
+
+      - name: Generate Evaluation Plots
+        run: |
+          python experiments/plot_results.py
+
+      # -----------------------------------
+      # DVC Reproducibility
+      # -----------------------------------
+
+      - name: Run DVC Pipeline
+        run: |
+          pip install dvc
+          dvc repro
+
+      # -----------------------------------
+      # Build Docker Image
+      # -----------------------------------
+
+      - name: Build Docker Image
+        run: |
+          docker build -t smart-taxi-api .
