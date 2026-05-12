@@ -1,10 +1,17 @@
+# DVC tracked models
+models/ppo/ppo_dispatch.zip
+
+# DVC cache
+.dvc/cache
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Python
 venv/
 __pycache__/
 *.pyc
-mlruns/
-mlflow.db
-logs/
+
+# Logs
 *.log
-.airflow/
-.env
-*.sqlite
