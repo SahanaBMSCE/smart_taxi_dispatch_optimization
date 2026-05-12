@@ -1,7 +1,14 @@
-version: '3.8'
+version: "3.9"
 
 services:
+
   smart-taxi-api:
+
     build: .
+
+    container_name: smart_taxi_api
+
     ports:
       - "8000:8000"
+
+    restart: always
