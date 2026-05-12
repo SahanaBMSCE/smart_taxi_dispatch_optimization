@@ -1,12 +1,12 @@
 from stable_baselines3 import PPO
-from sim.taxi_env import TaxiDispatchEnv
+from sim.ppo_env import PPOTaxiEnv
 import mlflow
 
 mlflow.set_tracking_uri("file:./mlruns")
 
 def train_ppo():
 
-    env = TaxiDispatchEnv()
+    env = PPOTaxiEnv()
 
     model = PPO(
         "MlpPolicy",

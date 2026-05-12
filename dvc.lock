@@ -1,0 +1,14 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python preprocessing/preprocess.py
+    deps:
+    - path: data/raw/taxi_data.csv
+      hash: md5
+      md5: 98fada9822bd993d61ff458511dda482
+      size: 67
+    outs:
+    - path: data/processed/clean.csv
+      hash: md5
+      md5: e9a97e7c808057d2371f58adba837712
+      size: 64
