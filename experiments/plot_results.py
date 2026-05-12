@@ -1,96 +1,214 @@
-import os
 import json
-import numpy as np
 import matplotlib.pyplot as plt
+import os
 
+os.makedirs("plots", exist_ok=True)
 
-def load_json(path):
-    with open(path, "r") as f:
-        return json.load(f)
+# -----------------------------------
+# LOAD Q-LEARNING RESULTS
+# -----------------------------------
 
+with open(
+    "results/results_qlearning_v2_explored.json",
+    "r"
+) as f:
 
-def plot_reward_curve(result_path, output_path, title):
-    data = load_json(result_path)
-    rewards = data["reward_history"]
+    qlearning_results = json.load(f)
 
-    window = 20
-    smoothed = np.convolve(rewards, np.ones(window) / window, mode="valid")
+# -----------------------------------
+# LOAD PPO RESULTS
+# -----------------------------------
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(rewards, alpha=0.3, color="steelblue", label="Raw reward")
-    plt.plot(
-        range(window - 1, len(rewards)),
-        smoothed,
-        color="red",
-        linewidth=2,
-        label=f"{window}-episode moving average",
-    )
-    plt.xlabel("Episode")
-    plt.ylabel("Total Reward")
-    plt.title(title)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(output_path)
-    plt.close()
-    print(f"Saved: {output_path}")
+with open(
+    "results/results_ppo.json",
+    "r"
+) as f:
 
+    ppo_results = json.load(f)
 
-def plot_waiting_time_comparison(comparison_path, output_path):
-    data = load_json(comparison_path)
+# -----------------------------------
+# EXTRACT METRICS
+# -----------------------------------
 
-    labels = ["Nearest-Taxi Baseline", "RL Policy"]
-    values = [
-        data["baseline_avg_waiting_time"],
-        data["rl_avg_waiting_time"],
+baseline_wait_time = 2.14
+
+qlearning_wait_time = float(
+    qlearning_results[
+        "average_waiting_time_last_50"
     ]
+)
 
-    improvement = data.get("improvement_percent", 0)
+ppo_wait_time = float(
+    ppo_results[
+        "average_waiting_time_last_50"
+    ]
+)
 
-    plt.figure(figsize=(7, 5))
-    bars = plt.bar(labels, values, color=["steelblue", "darkorange"], width=0.4)
+# -----------------------------------
+# IMPROVEMENTS
+# -----------------------------------
 
-    # Add value labels on top of each bar
-    for bar, val in zip(bars, values):
-        plt.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.02,
-            f"{val:.2f}",
-            ha="center",
-            va="bottom",
-            fontsize=11,
-        )
+qlearning_improvement = (
+    (
+        baseline_wait_time
+        - qlearning_wait_time
+    )
+    / baseline_wait_time
+) * 100
 
-    plt.xlabel("Policy")
-    plt.ylabel("Average Waiting Time")
-    plt.title(f"Baseline vs RL Waiting Time Comparison\n(Improvement: {improvement:.1f}%)")
-    plt.tight_layout()
-    plt.savefig(output_path)
-    plt.close()
-    print(f"Saved: {output_path}")
+ppo_improvement = (
+    (
+        baseline_wait_time
+        - ppo_wait_time
+    )
+    / baseline_wait_time
+) * 100
 
+# -----------------------------------
+# PLOT DATA
+# -----------------------------------
 
-def main():
-    os.makedirs("plots", exist_ok=True)
+models = [
+    "Nearest-Taxi\nBaseline",
+    "Q-Learning",
+    "PPO"
+]
 
-    plot_reward_curve(
-        "results/results_qlearning_v1.json",
-        "plots/reward_curve_v1.png",
-        "Reward Curve - Q-learning V1",
+wait_times = [
+    baseline_wait_time,
+    qlearning_wait_time,
+    ppo_wait_time
+]
+
+colors = [
+    "steelblue",
+    "darkorange",
+    "green"
+]
+
+# -----------------------------------
+# CREATE FIGURE
+# -----------------------------------
+
+plt.figure(figsize=(10, 6))
+
+bars = plt.bar(
+    models,
+    wait_times,
+    color=colors,
+    width=0.6
+)
+
+# -----------------------------------
+# LABELS
+# -----------------------------------
+
+plt.ylabel(
+    "Average Waiting Time",
+    fontsize=12
+)
+
+plt.xlabel(
+    "Dispatch Policy",
+    fontsize=12
+)
+
+plt.title(
+    "Baseline vs Q-Learning vs PPO Waiting Time Comparison",
+    fontsize=14
+)
+
+# -----------------------------------
+# VALUE LABELS
+# -----------------------------------
+
+for bar in bars:
+
+    height = bar.get_height()
+
+    plt.text(
+        bar.get_x() + bar.get_width() / 2,
+        height + 0.03,
+        f"{height:.2f}",
+        ha="center",
+        fontsize=11
     )
 
-    plot_reward_curve(
-        "results/results_qlearning_v2_explored.json",
-        "plots/reward_curve_v2.png",
-        "Reward Curve - Q-learning V2 Explored",
-    )
+# -----------------------------------
+# GRID
+# -----------------------------------
 
-    plot_waiting_time_comparison(
-        "results/comparison.json",
-        "plots/wait_time_comparison.png",
-    )
+plt.grid(
+    axis="y",
+    linestyle="--",
+    alpha=0.4
+)
 
-    print("\nAll plots generated successfully.")
+# -----------------------------------
+# IMPROVEMENT TEXT
+# -----------------------------------
 
+plt.figtext(
+    0.5,
+    0.01,
+    (
+        f"Q-Learning Improvement: "
+        f"{qlearning_improvement:.1f}%   |   "
+        f"PPO Improvement: "
+        f"{ppo_improvement:.1f}%"
+    ),
+    ha="center",
+    fontsize=11
+)
 
-if __name__ == "__main__":
-    main()
+# -----------------------------------
+# SAVE FIGURE
+# -----------------------------------
+
+plt.tight_layout()
+
+plt.savefig(
+    "plots/wait_time_comparison.png",
+    dpi=300
+)
+
+plt.close()
+
+# -----------------------------------
+# CONSOLE OUTPUT
+# -----------------------------------
+
+print("\n=== Taxi Dispatch Model Comparison ===\n")
+
+print(
+    f"Baseline Waiting Time: "
+    f"{baseline_wait_time:.2f}"
+)
+
+print(
+    f"Q-Learning Waiting Time: "
+    f"{qlearning_wait_time:.2f}"
+)
+
+print(
+    f"PPO Waiting Time: "
+    f"{ppo_wait_time:.2f}"
+)
+
+print(
+    f"\nQ-Learning Improvement: "
+    f"{qlearning_improvement:.2f}%"
+)
+
+print(
+    f"PPO Improvement: "
+    f"{ppo_improvement:.2f}%"
+)
+
+print(
+    "\nComparison plot saved to:"
+)
+
+print(
+    "plots/wait_time_comparison.png"
+)

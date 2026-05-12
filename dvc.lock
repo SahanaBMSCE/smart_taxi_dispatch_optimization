@@ -12,3 +12,31 @@ stages:
       hash: md5
       md5: e9a97e7c808057d2371f58adba837712
       size: 64
+  train_qlearning:
+    cmd: python -m experiments.train --config configs/qlearning_v2_explored.yaml
+    deps:
+    - path: configs/qlearning_v2_explored.yaml
+      hash: md5
+      md5: 3490450057326a4a74e9b63f7ef8e99d
+      size: 418
+    - path: data/processed/clean.csv
+      hash: md5
+      md5: e9a97e7c808057d2371f58adba837712
+      size: 64
+    outs:
+    - path: policies/policy_v2_explored.pkl
+      hash: md5
+      md5: 0f2073664972cb65e9aaddcf162bbc61
+      size: 236210
+  train_ppo:
+    cmd: python -m sim.ppo_agent
+    deps:
+    - path: data/processed/clean.csv
+      hash: md5
+      md5: e9a97e7c808057d2371f58adba837712
+      size: 64
+    outs:
+    - path: models/ppo/ppo_dispatch.zip
+      hash: md5
+      md5: 8c80911372ec68a92d9d13f9ef29369e
+      size: 142749

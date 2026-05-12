@@ -1,0 +1,12 @@
+{
+    "run_id": "ppo_dispatch",
+    "algorithm": "PPO",
+    "average_reward_last_50": -43.04,
+    "average_waiting_time_last_50": 0.8607999999999998,
+    "parameters": {
+        "learning_rate": 0.0003,
+        "gamma": 0.99,
+        "batch_size": 64
+    },
+    "policy_file": "models/ppo/ppo_dispatch.zip"
+}

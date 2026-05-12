@@ -2,6 +2,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
+from sim.taxi_env import TaxiDispatchEnv
+
+
 class PPOTaxiEnv(gym.Env):
 
     metadata = {"render_modes": ["human"]}
@@ -10,63 +13,50 @@ class PPOTaxiEnv(gym.Env):
 
         super(PPOTaxiEnv, self).__init__()
 
-        self.action_space = spaces.Discrete(5)
+        self.base_env = TaxiDispatchEnv(
+            grid_size=10,
+            num_taxis=3,
+            max_steps=50,
+            seed=42
+        )
+
+        self.action_space = spaces.Discrete(
+            self.base_env.num_actions
+        )
 
         self.observation_space = spaces.Box(
             low=0,
-            high=10,
-            shape=(4,),
+            high=20,
+            shape=(5,),
             dtype=np.float32
         )
 
-        self.state = np.array([0, 0, 0, 0], dtype=np.float32)
-
-        self.current_step = 0
-        self.max_steps = 50
-
     def reset(self, seed=None, options=None):
 
-        super().reset(seed=seed)
+        state = self.base_env.reset()
 
-        self.state = np.random.randint(
-            0,
-            10,
-            size=(4,)
-        ).astype(np.float32)
+        state = np.array(state, dtype=np.float32)
 
-        self.current_step = 0
-
-        return self.state, {}
+        return state, {}
 
     def step(self, action):
 
-        self.current_step += 1
+        next_state, reward, done, info = self.base_env.step(action)
 
-        passenger = self.state[:2]
-        taxi = self.state[2:]
+        next_state = np.array(
+            next_state,
+            dtype=np.float32
+        )
 
-        wait_time = np.linalg.norm(passenger - taxi)
-
-        reward = -wait_time
-
-        self.state = np.random.randint(
-            0,
-            10,
-            size=(4,)
-        ).astype(np.float32)
-
-        terminated = self.current_step >= self.max_steps
-
+        terminated = done
         truncated = False
 
-        info = {
-            "wait_time": float(wait_time)
-        }
-
         return (
-            self.state,
+            next_state,
             reward,
             terminated,
             truncated,
-            info
+            {
+                "wait_time": info["waiting_time"]
+            }
         )
