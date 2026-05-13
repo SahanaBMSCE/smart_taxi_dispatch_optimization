@@ -1,79 +1,359 @@
-# 🚕 Smart Taxi Dispatch Optimization using Reinforcement Learning and MLOps
+# Smart Taxi Dispatch Optimization using Reinforcement Learning and MLOps
 
-## 📌 Problem Statement
-The objective of this project is to optimize taxi dispatch decisions in a city grid to reduce passenger waiting time and minimize empty taxi travel distance.
+## Project Overview
 
----
+Smart Taxi Dispatch Optimization is a Reinforcement Learning and MLOps project designed to optimize taxi dispatch decisions in a simulated urban transportation environment.
 
-## 🌍 SDG Link
-This project supports **SDG 11 – Sustainable Cities and Communities** by:
-- Reducing passenger waiting time  
-- Improving urban transportation efficiency  
-- Minimizing congestion and fuel wastage  
+The project compares:
 
----
+1. Baseline Nearest-Taxi Strategy  
+2. Q-Learning  
+3. Proximal Policy Optimization (PPO)  
 
-## 🧪 Simulator
-The simulator models a city as a **5×5 grid**:
-- Multiple taxis are randomly placed on the grid  
-- A passenger request (pickup + drop) is generated dynamically  
-- The RL agent decides which taxi to dispatch  
+The objective is to minimize passenger waiting time while demonstrating a complete end-to-end MLOps workflow including:
 
----
-
-## 🧠 RL Algorithm
-We use **Q-learning** because:
-- The state space is discrete  
-- The action space is small and finite  
-- It is simple and efficient for this environment  
+- Experiment Tracking using MLflow
+- Data and Model Versioning using DVC
+- API Deployment using FastAPI
+- Containerization using Docker
+- Workflow Orchestration using Apache Airflow
+- CI/CD Automation using GitHub Actions
+- Reproducible Training Pipelines
 
 ---
 
-## 📊 State Representation
+# SDG Alignment
+
+This project contributes to the following United Nations Sustainable Development Goals (SDGs):
+
+## SDG 9 — Industry, Innovation and Infrastructure
+- Intelligent transportation optimization
+- AI-driven infrastructure enhancement
+- Scalable ML deployment pipelines
+
+## SDG 11 — Sustainable Cities and Communities
+- Reduced passenger waiting time
+- Efficient urban mobility management
+- Improved transportation resource utilization
+
+## SDG 13 — Climate Action
+- Reduced unnecessary taxi movement
+- Optimized fleet allocation
+- Potential reduction in fuel consumption and emissions
+
+---
+
+# Problem Statement
+
+Traditional taxi dispatch systems commonly rely on heuristic-based nearest-vehicle selection strategies.
+
+Such approaches:
+- do not adapt dynamically
+- fail to learn from demand patterns
+- often lead to inefficient fleet allocation
+
+This project explores whether Reinforcement Learning can learn better dispatch policies that reduce average passenger waiting time compared to static heuristic methods.
+
+---
+
+# Objectives
+
+The primary objectives of the project are:
+
+- Simulate a taxi dispatch environment
+- Implement a baseline dispatch strategy
+- Train a Q-Learning agent
+- Train a PPO agent
+- Compare dispatch performance
+- Track experiments using MLflow
+- Version models and pipelines using DVC
+- Deploy APIs using FastAPI
+- Containerize the application using Docker
+- Automate workflows using CI/CD pipelines
+
+---
+
+# Technologies Used
+
+| Category | Technologies |
+|---|---|
+| Programming Language | Python 3.10 |
+| Reinforcement Learning | Q-Learning, PPO |
+| RL Library | Stable-Baselines3 |
+| API Framework | FastAPI |
+| Experiment Tracking | MLflow |
+| Data & Model Versioning | DVC |
+| Containerization | Docker, Docker Compose |
+| Workflow Orchestration | Apache Airflow |
+| CI/CD | GitHub Actions |
+| Visualization | Matplotlib |
+| Model Serialization | Joblib |
+
+---
+
+# Project Structure
 
 ```text
-(distance_taxi_0, distance_taxi_1, distance_taxi_2, pickup_x, pickup_y)
+smart_taxi_dispatch_optimization/
+│
+├── api/
+│   └── app.py
+│
+├── configs/
+│   ├── qlearning_v1.yaml
+│   └── qlearning_v2_explored.yaml
+│
+├── dags/
+│   └── taxi_pipeline.py
+│
+├── docs/
+│   └── methodology.md
+│
+├── experiments/
+│   ├── evaluate.py
+│   ├── plot_results.py
+│   └── train.py
+│
+├── features/
+│   └── demand_hotspots.py
+│
+├── models/
+│   └── ppo/
+│
+├── plots/
+│   ├── reward_curve_v2.png
+│   ├── reward_curve_ppo.png
+│   └── wait_time_comparison.png
+│
+├── policies/
+│   └── policy_v2_explored.pkl
+│
+├── results/
+│   ├── results_qlearning_v2_explored.json
+│   └── results_ppo.json
+│
+├── sim/
+│   ├── ppo_agent.py
+│   ├── ppo_env.py
+│   └── taxi_env.py
+│
+├── Dockerfile
+├── docker-compose.yml
+├── dvc.yaml
+├── requirements.txt
+└── README.md
+```
 
-## Reproducibility
+---
 
-Clone the repository:
+# Reinforcement Learning Approaches
+
+## 1. Baseline Strategy
+
+The baseline strategy dispatches the nearest available taxi to the passenger pickup location.
+
+### Characteristics
+- Rule-based heuristic
+- No learning capability
+- Static dispatch behavior
+- Used as benchmark
+
+---
+
+## 2. Q-Learning
+
+Q-Learning is a value-based Reinforcement Learning algorithm that learns an optimal dispatch policy using a Q-table.
+
+### Features
+- Epsilon-greedy exploration
+- Temporal Difference learning
+- State-action value estimation
+- Tabular policy learning
+
+### Reward Function
+
+```text
+Reward = - Waiting Time
+```
+
+The agent learns to minimize waiting time by maximizing cumulative reward.
+
+---
+
+## 3. Proximal Policy Optimization (PPO)
+
+PPO is a policy-gradient Reinforcement Learning algorithm implemented using Stable-Baselines3.
+
+### Features
+- Neural network policy learning
+- Stable policy optimization
+- Improved convergence
+- Better scalability
+
+### PPO Configuration
+
+| Parameter | Value |
+|---|---|
+| Learning Rate | 0.0003 |
+| Gamma | 0.99 |
+| Batch Size | 64 |
+| Timesteps | 50000 |
+
+---
+
+# Performance Comparison
+
+| Model | Average Waiting Time |
+|---|---|
+| Baseline | 2.14 |
+| Q-Learning | 1.13 |
+| PPO | 0.86 |
+
+## Observations
+
+- Both RL approaches outperform the baseline strategy.
+- PPO achieves the lowest average waiting time.
+- PPO demonstrates superior policy optimization capability.
+
+---
+
+# Results
+
+## Generated Outputs
+
+### Reward Curves
+- `plots/reward_curve_v2.png`
+- `plots/reward_curve_ppo.png`
+
+### Model Comparison Plot
+- `plots/wait_time_comparison.png`
+
+### Trained Policies
+- `policies/policy_v2_explored.pkl`
+- `models/ppo/ppo_dispatch.zip`
+
+### Experiment Results
+- `results/results_qlearning_v2_explored.json`
+- `results/results_ppo.json`
+
+### MLflow Artifacts
+- Reward plots
+- Metrics
+- Hyperparameters
+- Model artifacts
+
+---
+
+# MLOps Pipeline
+
+## MLflow Experiment Tracking
+
+MLflow is used for:
+- Parameter tracking
+- Metric logging
+- Artifact management
+- Reward curve visualization
+- Experiment comparison
+
+---
+
+## DVC Pipeline
+
+DVC is used for:
+- Data versioning
+- Model versioning
+- Pipeline reproducibility
+- Experiment reproducibility
+
+---
+
+## FastAPI Deployment
+
+FastAPI serves trained models through REST APIs.
+
+### Available Endpoints
+
+| Endpoint | Description |
+|---|---|
+| `/predict_qlearning` | Q-Learning prediction |
+| `/predict_ppo` | PPO prediction |
+| `/compare_models` | Model comparison |
+
+---
+
+## Docker Containerization
+
+Docker is used for:
+- Portable deployment
+- Dependency isolation
+- Reproducible execution
+
+---
+
+## GitHub Actions CI/CD
+
+CI/CD automates:
+- Dependency installation
+- Script verification
+- DVC pipeline validation
+- Docker image build validation
+
+---
+
+## Apache Airflow DAG
+
+Airflow is used for:
+- Pipeline orchestration
+- Task dependency management
+- Automated workflow execution
+
+---
+
+# Steps to Run the Project
+
+## 1. Clone Repository
 
 ```bash
-git clone <your-github-link>
+git clone https://github.com/SahanaBMSCE/smart_taxi_dispatch_optimization.git
 cd smart_taxi_dispatch_optimization
 ```
 
-Create environment:
+---
+
+## 2. Create Virtual Environment
 
 ```bash
-python -m venv env
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-Activate environment:
+---
 
-```bash
-env\Scripts\activate
-```
-
-Install dependencies:
+## 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Train model:
+---
+
+## 4. Run Q-Learning Training
 
 ```bash
-python experiments/train.py --config configs/qlearning_v2_explored.yaml
+python -m experiments.train --config configs/qlearning_v2_explored.yaml
 ```
 
-Evaluate model:
+---
+
+## 5. Run PPO Training
 
 ```bash
-python experiments/evaluate.py
+python -m sim.ppo_agent
 ```
 
-Generate plots:
+---
+
+## 6. Generate Evaluation Plots
 
 ```bash
 python experiments/plot_results.py
@@ -81,29 +361,76 @@ python experiments/plot_results.py
 
 ---
 
-## Monitoring Plan
+## 7. Run FastAPI Application
 
-If deployed in a real-world smart transportation system, we would monitor:
+```bash
+uvicorn api.app:app --reload
+```
 
--  Average passenger waiting time
-- Taxi utilization efficiency
-- Hotspot congestion levels
-- Frequency of taxi repositioning
-- Sudden increases in passenger demand
+Open:
 
-This helps ensure efficient and reliable taxi dispatch performance.
+```text
+http://127.0.0.1:8000/docs
+```
 
+---
 
-## Architecture diagram
+## 8. Run MLflow UI
 
-Passenger Request
-        ↓
-Taxi Simulator Environment
-        ↓
-Q-Learning Agent
-        ↓
-Policy Selection
-        ↓
-Evaluation + MLflow Tracking
-        ↓
-FastAPI Prediction Service
+```bash
+mlflow ui --backend-store-uri file:./mlruns
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000
+```
+
+---
+
+## 9. Run DVC Pipeline
+
+```bash
+dvc repro
+```
+
+---
+
+## 10. Build Docker Image
+
+```bash
+docker build -t smart-taxi-api .
+```
+
+---
+
+## 11. Run Docker Compose
+
+```bash
+docker compose up --build
+```
+
+---
+
+## 12. Run Airflow DAG
+
+```bash
+airflow standalone
+```
+
+---
+
+# Contributors
+
+- Shinchana R Reddy
+- Sinchana K
+- Sahana K Sonni
+- Shreyashree C R
+- Varsha Tolani
+
+---
+
+# License
+
+This project is intended for academic and educational purposes.

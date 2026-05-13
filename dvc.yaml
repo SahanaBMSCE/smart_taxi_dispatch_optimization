@@ -1,0 +1,23 @@
+stages:
+
+  preprocess:
+    cmd: python preprocessing/preprocess.py
+    deps:
+      - data/raw/taxi_data.csv
+    outs:
+      - data/processed/clean.csv
+
+  train_qlearning:
+    cmd: python -m experiments.train --config configs/qlearning_v2_explored.yaml
+    deps:
+      - data/processed/clean.csv
+      - configs/qlearning_v2_explored.yaml
+    outs:
+      - policies/policy_v2_explored.pkl
+
+  train_ppo:
+    cmd: python -m sim.ppo_agent
+    deps:
+      - data/processed/clean.csv
+    outs:
+      - models/ppo/ppo_dispatch.zip

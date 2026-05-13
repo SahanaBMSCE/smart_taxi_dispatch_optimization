@@ -1,182 +1,198 @@
-import os
-import sys
-import json
-import argparse
-import random
-import mlflow
-from collections import defaultdict
-
-import yaml
-import joblib
-import numpy as np
-import matplotlib.pyplot as plt
-from tqdm import tqdm
-
-# Allow importing from project root
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from sim.taxi_env import TaxiDispatchEnv
-
-
-def make_q_table(num_actions):
-    return defaultdict(lambda: np.zeros(num_actions))
-
-
-def choose_action(q_table, state, epsilon, num_actions):
-    """
-    Epsilon-greedy exploration.
-    """
-    if random.random() < epsilon:
-        return random.randint(0, num_actions - 1)
-    return int(np.argmax(q_table[state]))
-
-
 def train(config):
+
+    mlflow.set_tracking_uri("file:./mlruns")
+
     os.makedirs("policies", exist_ok=True)
     os.makedirs("results", exist_ok=True)
     os.makedirs("plots", exist_ok=True)
 
     run_id = config["run_id"]
-    mlflow.start_run(run_name=run_id)
 
-    env = TaxiDispatchEnv(
-        grid_size=config["grid_size"],
-        num_taxis=config["num_taxis"],
-        max_steps=config["max_steps"],
-        seed=42
-    )
+    with mlflow.start_run(run_name=run_id):
 
-    num_actions = env.num_actions
+        env = TaxiDispatchEnv(
+            grid_size=config["grid_size"],
+            num_taxis=config["num_taxis"],
+            max_steps=config["max_steps"],
+            seed=42
+        )
 
-    episodes = config["episodes"]
-    alpha = config["learning_rate"]
-    gamma = config["gamma"]
+        num_actions = env.num_actions
 
-    epsilon = config["epsilon"]
-    epsilon_decay = config["epsilon_decay"]
-    min_epsilon = config["min_epsilon"]
-    mlflow.log_param("episodes", episodes)
-    mlflow.log_param("learning_rate", alpha)
-    mlflow.log_param("gamma", gamma)
-    mlflow.log_param("epsilon", epsilon)
-    mlflow.log_param("epsilon_decay", epsilon_decay)
-    mlflow.log_param("min_epsilon", min_epsilon)
+        episodes = config["episodes"]
+        alpha = config["learning_rate"]
+        gamma = config["gamma"]
 
+        epsilon = config["epsilon"]
+        epsilon_decay = config["epsilon_decay"]
+        min_epsilon = config["min_epsilon"]
 
-    q_table = make_q_table(num_actions)
+        mlflow.log_param("algorithm", "Q-Learning")
+        mlflow.log_param("episodes", episodes)
+        mlflow.log_param("learning_rate", alpha)
+        mlflow.log_param("gamma", gamma)
+        mlflow.log_param("epsilon", epsilon)
+        mlflow.log_param("epsilon_decay", epsilon_decay)
+        mlflow.log_param("min_epsilon", min_epsilon)
 
-    episode_rewards = []
-    episode_waiting_times = []
+        q_table = make_q_table(num_actions)
 
-    for episode in tqdm(range(episodes), desc=f"Training {run_id}"):
-        state = env.reset()
+        episode_rewards = []
+        episode_waiting_times = []
 
-        total_reward = 0
-        total_waiting_time = 0
-        done = False
+        for episode in tqdm(range(episodes), desc=f"Training {run_id}"):
 
-        while not done:
-            action = choose_action(q_table, state, epsilon, num_actions)
+            state = env.reset()
 
-            next_state, reward, done, info = env.step(action)
+            total_reward = 0
+            total_waiting_time = 0
+            done = False
 
-            best_next_action_value = np.max(q_table[next_state])
+            while not done:
 
-            q_table[state][action] = q_table[state][action] + alpha * (
-                reward + gamma * best_next_action_value - q_table[state][action]
+                action = choose_action(
+                    q_table,
+                    state,
+                    epsilon,
+                    num_actions
+                )
+
+                next_state, reward, done, info = env.step(action)
+
+                best_next_action_value = np.max(q_table[next_state])
+
+                q_table[state][action] = (
+                    q_table[state][action]
+                    + alpha * (
+                        reward
+                        + gamma * best_next_action_value
+                        - q_table[state][action]
+                    )
+                )
+
+                state = next_state
+
+                total_reward += reward
+                total_waiting_time += info["waiting_time"]
+
+            epsilon = max(
+                min_epsilon,
+                epsilon * epsilon_decay
             )
 
-            state = next_state
+            episode_rewards.append(total_reward)
 
-            total_reward += reward
-            total_waiting_time += info["waiting_time"]
+            episode_waiting_times.append(
+                total_waiting_time / config["max_steps"]
+            )
 
-        epsilon = max(min_epsilon, epsilon * epsilon_decay)
+        avg_reward = float(np.mean(episode_rewards[-50:]))
 
-        episode_rewards.append(total_reward)
-        episode_waiting_times.append(total_waiting_time / config["max_steps"])
+        avg_waiting_time = float(
+            np.mean(episode_waiting_times[-50:])
+        )
 
-    avg_reward = float(np.mean(episode_rewards[-50:]))
-    avg_waiting_time = float(np.mean(episode_waiting_times[-50:]))
-    mlflow.log_metric("average_reward", avg_reward)
-    mlflow.log_metric("average_waiting_time", avg_waiting_time)
+        mlflow.log_metric(
+            "average_reward",
+            avg_reward
+        )
 
-    # Save policy
-    policy_data = {
-        "q_table": {str(k): v.tolist() for k, v in q_table.items()},  # ← serialization-safe
-        "num_actions": num_actions,
-        "config": config
-    }
+        mlflow.log_metric(
+            "average_waiting_time",
+            avg_waiting_time
+        )
 
-    joblib.dump(policy_data, config["policy_path"])
-    mlflow.log_artifact(config["policy_path"])
+        # Save policy
+        policy_data = {
+            "q_table": {
+                str(k): v.tolist()
+                for k, v in q_table.items()
+            },
+            "num_actions": num_actions,
+            "config": config
+        }
 
-    # Save JSON result
-    results = {
-        "run_id": run_id,
-        "algorithm": "Q-learning",
-        "episodes": episodes,
-        "average_reward_last_50": avg_reward,
-        "average_waiting_time_last_50": avg_waiting_time,
-        "parameters": {
-            "learning_rate": alpha,
-            "gamma": gamma,
-            "initial_epsilon": config["epsilon"],
-            "epsilon_decay": epsilon_decay,
-            "min_epsilon": min_epsilon
-        },
-        "state": "nearest_taxi_distance + passenger_pickup_x + passenger_pickup_y",
-        "action": "choose taxi index to dispatch",
-        "reward": "negative passenger waiting time",
-        "policy_file": config["policy_path"],
-        "reward_history": episode_rewards,
-        "waiting_time_history": episode_waiting_times
-    }
+        joblib.dump(
+            policy_data,
+            config["policy_path"]
+        )
 
-    with open(config["results_path"], "w") as f:
-        json.dump(results, f, indent=4)
+        mlflow.log_artifact(
+            config["policy_path"]
+        )
 
-    # Save reward curve
-    window = 20
-    smoothed = np.convolve(episode_rewards, np.ones(window)/window, mode="valid")
+        # Save JSON result
+        results = {
+            "run_id": run_id,
+            "algorithm": "Q-learning",
+            "episodes": episodes,
+            "average_reward_last_50": avg_reward,
+            "average_waiting_time_last_50": avg_waiting_time,
+            "parameters": {
+                "learning_rate": alpha,
+                "gamma": gamma,
+                "initial_epsilon": config["epsilon"],
+                "epsilon_decay": epsilon_decay,
+                "min_epsilon": min_epsilon
+            },
+            "state": "nearest_taxi_distance + passenger_pickup_x + passenger_pickup_y",
+            "action": "choose taxi index to dispatch",
+            "reward": "negative passenger waiting time",
+            "policy_file": config["policy_path"],
+            "reward_history": episode_rewards,
+            "waiting_time_history": episode_waiting_times
+        }
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(episode_rewards, alpha=0.3, color="steelblue", label="Raw reward")
-    plt.plot(range(window - 1, len(episode_rewards)), smoothed,
-            color="red", linewidth=2, label=f"{window}-ep moving avg")
-    plt.xlabel("Episode")
-    plt.ylabel("Total Reward")
-    plt.title(f"Reward Curve - {run_id}")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(config["plot_path"])
-    mlflow.log_artifact(config["plot_path"])
-    plt.close()
+        with open(config["results_path"], "w") as f:
+            json.dump(results, f, indent=4)
 
-    print("\nTraining completed")
-    print("Run ID:", run_id)
-    print("Policy saved to:", config["policy_path"])
-    print("Results saved to:", config["results_path"])
-    print("Plot saved to:", config["plot_path"])
-    print("Average reward last 50 episodes:", avg_reward)
-    print("Average waiting time last 50 episodes:", avg_waiting_time)
-    mlflow.end_run()
+        # Save reward curve
+        window = 20
 
-def load_config(config_path):
-    with open(config_path, "r") as f:
-        return yaml.safe_load(f)
+        smoothed = np.convolve(
+            episode_rewards,
+            np.ones(window) / window,
+            mode="valid"
+        )
 
+        plt.figure(figsize=(10, 5))
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to YAML config file"
-    )
+        plt.plot(
+            episode_rewards,
+            alpha=0.3,
+            color="steelblue",
+            label="Raw reward"
+        )
 
-    args = parser.parse_args()
-    config = load_config(args.config)
+        plt.plot(
+            range(window - 1, len(episode_rewards)),
+            smoothed,
+            color="red",
+            linewidth=2,
+            label=f"{window}-ep moving avg"
+        )
 
-    train(config)
+        plt.xlabel("Episode")
+        plt.ylabel("Total Reward")
+
+        plt.title(f"Reward Curve - {run_id}")
+
+        plt.legend()
+
+        plt.tight_layout()
+
+        plt.savefig(config["plot_path"])
+
+        mlflow.log_artifact(
+            config["plot_path"]
+        )
+
+        plt.close()
+
+        print("\nTraining completed")
+        print("Run ID:", run_id)
+        print("Policy saved to:", config["policy_path"])
+        print("Results saved to:", config["results_path"])
+        print("Plot saved to:", config["plot_path"])
+        print("Average reward last 50 episodes:", avg_reward)
+        print("Average waiting time last 50 episodes:", avg_waiting_time)
