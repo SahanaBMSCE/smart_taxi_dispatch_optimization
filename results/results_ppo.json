@@ -1,8 +1,8 @@
 {
     "run_id": "ppo_dispatch",
     "algorithm": "PPO",
-    "average_reward_last_50": -43.04,
-    "average_waiting_time_last_50": 0.8607999999999998,
+    "average_reward_last_50": -46.38,
+    "average_waiting_time_last_50": 0.9275999999999999,
     "parameters": {
         "learning_rate": 0.0003,
         "gamma": 0.99,
