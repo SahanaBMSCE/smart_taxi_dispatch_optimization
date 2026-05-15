@@ -228,10 +228,6 @@ PPO is a policy-gradient Reinforcement Learning algorithm implemented using Stab
 ### Model Comparison Plot
 - `plots/wait_time_comparison.png`
 
-### Trained Policies
-- `policies/policy_v2_explored.pkl`
-- `models/ppo/ppo_dispatch.zip`
-
 ### Experiment Results
 - `results/results_qlearning_v2_explored.json`
 - `results/results_ppo.json`
@@ -314,7 +310,7 @@ Airflow is used for:
 ## 1. Clone Repository
 
 ```bash
-git clone https://github.com/SahanaBMSCE/smart_taxi_dispatch_optimization.git
+git clone https://github.com/shinchana1011/smart_taxi_dispatch_optimization.git
 cd smart_taxi_dispatch_optimization
 ```
 
